@@ -39,6 +39,8 @@ public class Bumper : MonoBehaviour
 
         var enemy = rb.GetComponent<EnemyRobot>();
         if (enemy) enemy.Knockback(Vector3.zero);
+        // Отскок звучит одинаково и для шара, и для робота
+        SoundManager.PlayHitBumper(Mathf.Clamp01(c.relativeVelocity.magnitude / 16f));
 
         pulse = 1f;
     }

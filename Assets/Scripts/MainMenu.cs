@@ -10,6 +10,7 @@ public class MainMenu : MonoBehaviour
     {
         Time.timeScale = 1f;
         UIKit.EnsureEventSystem();
+        SoundManager.PlayMusic(SoundManager.Music.Menu);
 
         var canvas = UIKit.Canvas("MainMenuUI");
         UIKit.Stretch(UIKit.Rect("Background", canvas, new Color(0.07f, 0.08f, 0.09f), blocksClicks: true));

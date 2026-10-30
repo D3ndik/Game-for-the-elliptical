@@ -104,6 +104,10 @@ public class PlayerBall : MonoBehaviour
         var enemy = c.rigidbody ? c.rigidbody.GetComponent<EnemyRobot>() : null;
         if (enemy == null) return;
 
+        // Звук на любой заметный удар, не только на засчитанный таран
+        float hitSpeed = c.relativeVelocity.magnitude;
+        if (hitSpeed > 1.5f) SoundManager.PlayHitRobot(Mathf.Clamp01(hitSpeed / maxSpeed));
+
         Vector3 impulse = CalculateRamImpulse(enemy.Body);
         if (impulse == Vector3.zero) return;
 

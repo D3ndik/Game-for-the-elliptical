@@ -90,13 +90,19 @@ public class GameManager : MonoBehaviour
         if (Instance == this) Instance = null;
     }
 
-    void Start() => StartCoroutine(NextWave());
+    void Start()
+    {
+        SoundManager.PlayMusic(SoundManager.Music.Game, restart: true);
+        StartCoroutine(NextWave());
+    }
 
     public void SetPaused(bool paused)
     {
         if (IsGameOver) return;
         IsPaused = paused;
         Time.timeScale = paused ? 0f : 1f;
+        // На паузе — спокойная музыка меню, после паузы игровая продолжается с того же места
+        SoundManager.PlayMusic(paused ? SoundManager.Music.Menu : SoundManager.Music.Game);
     }
 
     public void Restart()
@@ -180,6 +186,7 @@ public class GameManager : MonoBehaviour
         IsVictory = true;
         Combo.Break();
         if (Player) Player.ControlsEnabled = false;
+        SoundManager.PlayMusic(SoundManager.Music.Menu, restart: true);
     }
 
     public void OnEnemyFell(EnemyRobot enemy)
@@ -187,6 +194,7 @@ public class GameManager : MonoBehaviour
         if (enemy.Dead) return;
         enemy.Dead = true;
         enemies.Remove(enemy);
+        SoundManager.PlayShatter();
 
         // Засчитывается любой робот, улетевший с арены, — неважно, тараном или просто вытолкнули
         if (!IsGameOver)
@@ -202,12 +210,14 @@ public class GameManager : MonoBehaviour
     public void OnPlayerFell(PlayerBall player)
     {
         if (respawning || IsGameOver) return;
+        SoundManager.PlayPlayerDeath();
         Combo.Break();
         Lives--;
         if (Lives <= 0)
         {
             IsGameOver = true;
             player.ControlsEnabled = false; // дальше GameUI показывает экран конца игры
+            SoundManager.PlayMusic(SoundManager.Music.Menu, restart: true);
             return;
         }
         StartCoroutine(RespawnPlayer(player));

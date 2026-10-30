@@ -96,6 +96,45 @@ public static class UIKit
         return button;
     }
 
+    // Горизонтальный ползунок 0..1: дорожка, заливка и ручка
+    public static Slider Slider(Transform parent, Vector2 pos, float value, UnityAction<float> onChange)
+    {
+        var root = new GameObject("Slider", typeof(RectTransform));
+        root.transform.SetParent(parent, false);
+        var rt = (RectTransform)root.transform;
+        rt.anchorMin = rt.anchorMax = rt.pivot = new Vector2(0.5f, 0.5f);
+        rt.anchoredPosition = pos;
+        rt.sizeDelta = new Vector2(400, 24);
+
+        // Дорожка ловит клики — можно нажать в любое место, а не только тянуть ручку
+        Stretch(Rect("Background", rt, new Color(1, 1, 1, 0.15f), blocksClicks: true));
+
+        var fillArea = new GameObject("Fill Area", typeof(RectTransform)).GetComponent<RectTransform>();
+        fillArea.SetParent(rt, false);
+        Stretch(fillArea);
+        var fill = Rect("Fill", fillArea, new Color(0.55f, 0.75f, 0.8f));
+        fill.sizeDelta = Vector2.zero;
+
+        var handleArea = new GameObject("Handle Slide Area", typeof(RectTransform)).GetComponent<RectTransform>();
+        handleArea.SetParent(rt, false);
+        Stretch(handleArea);
+        handleArea.offsetMin = new Vector2(12, 0);
+        handleArea.offsetMax = new Vector2(-12, 0);
+        var handle = Rect("Handle", handleArea, new Color(0.92f, 0.93f, 0.95f), blocksClicks: true);
+        handle.sizeDelta = new Vector2(24, 16);
+
+        var slider = root.AddComponent<Slider>();
+        slider.fillRect = fill;
+        slider.handleRect = handle;
+        slider.targetGraphic = handle.GetComponent<Image>();
+        slider.direction = UnityEngine.UI.Slider.Direction.LeftToRight;
+        slider.minValue = 0f;
+        slider.maxValue = 1f;
+        slider.SetValueWithoutNotify(value);
+        slider.onValueChanged.AddListener(onChange);
+        return slider;
+    }
+
     public static void Quit()
     {
 #if UNITY_EDITOR

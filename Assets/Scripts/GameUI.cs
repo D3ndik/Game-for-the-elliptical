@@ -63,15 +63,26 @@ public class GameUI : MonoBehaviour
 
         var box = UIKit.Rect("Box", dim, UIKit.PanelColor);
         box.anchorMin = box.anchorMax = box.pivot = new Vector2(0.5f, 0.5f);
-        box.sizeDelta = new Vector2(560, 640);
+        box.sizeDelta = new Vector2(560, 760);
 
-        pauseTitle = UIKit.Text(box, "Title", new Vector2(0.5f, 0.5f), new Vector2(0, 230), 64, TextAnchor.MiddleCenter);
-        pauseScore = UIKit.Text(box, "Score", new Vector2(0.5f, 0.5f), new Vector2(0, 150), 40, TextAnchor.MiddleCenter);
+        pauseTitle = UIKit.Text(box, "Title", new Vector2(0.5f, 0.5f), new Vector2(0, 290), 64, TextAnchor.MiddleCenter);
+        pauseScore = UIKit.Text(box, "Score", new Vector2(0.5f, 0.5f), new Vector2(0, 210), 40, TextAnchor.MiddleCenter);
         pauseScore.color = new Color(0.8f, 0.82f, 0.85f);
 
-        continueButton = UIKit.Button(box, "Продолжить", new Vector2(0, 40), () => gm.SetPaused(false));
-        restartButton = UIKit.Button(box, "Начать заново", new Vector2(0, -60), gm.Restart);
-        UIKit.Button(box, "Главное меню", new Vector2(0, -160), gm.ToMainMenu);
+        continueButton = UIKit.Button(box, "Продолжить", new Vector2(0, 100), () => gm.SetPaused(false));
+        restartButton = UIKit.Button(box, "Начать заново", new Vector2(0, 0), gm.Restart);
+        UIKit.Button(box, "Главное меню", new Vector2(0, -100), gm.ToMainMenu);
+
+        // Громкость всей игры; музыка паузы играет — изменение слышно сразу
+        var volumeLabel = UIKit.Text(box, "VolumeLabel", new Vector2(0.5f, 0.5f), new Vector2(0, -200), 30, TextAnchor.MiddleCenter);
+        volumeLabel.color = new Color(0.8f, 0.82f, 0.85f);
+        void ShowVolume(float v) => volumeLabel.text = $"Громкость: {Mathf.RoundToInt(v * 100)}%";
+        ShowVolume(SoundManager.MasterVolume);
+        UIKit.Slider(box, new Vector2(0, -250), SoundManager.MasterVolume, v =>
+        {
+            SoundManager.MasterVolume = v;
+            ShowVolume(v);
+        });
 
         pausePanel.SetActive(false);
     }
