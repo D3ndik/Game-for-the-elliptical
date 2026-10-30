@@ -1,8 +1,10 @@
 using UnityEngine;
 
-// Триггер под ареной: всё, что сюда упало, — выбыло
+// Зона смерти — невидимый триггер под ареной (объект KillZone в сцене Arena, y = −2).
+// Всё, что в неё упало, выбыло: робот засчитывается игроку, шар теряет жизнь
 public class KillZone : MonoBehaviour
 {
+    // При загрузке: делаем коллайдер триггером (сквозь него падают, а не стоят на нём) и прячем куб
     void Awake()
     {
         GetComponent<Collider>().isTrigger = true;
@@ -10,6 +12,7 @@ public class KillZone : MonoBehaviour
         if (r) r.enabled = false;
     }
 
+    // Кто-то влетел в зону: определяем, робот это или шар, и сообщаем GameManager
     void OnTriggerEnter(Collider other)
     {
         var gm = GameManager.Instance;

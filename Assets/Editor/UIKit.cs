@@ -1,10 +1,11 @@
+using UnityEditor;
 using UnityEngine;
-using UnityEngine.Events;
 using UnityEngine.EventSystems;
+using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.UI;
 using UnityEngine.UI;
 
-// Общие заготовки uGUI, которые строят HUD, паузу и главное меню из кода
+// Заготовки uGUI для редакторских сборщиков: интерфейс один раз строится и сохраняется в сцене
 public static class UIKit
 {
     static Font font;
@@ -12,13 +13,13 @@ public static class UIKit
 
     public static readonly Color ButtonColor = new Color(0.16f, 0.18f, 0.2f, 0.95f);
     public static readonly Color PanelColor = new Color(0.08f, 0.09f, 0.1f, 0.92f);
+    public static readonly Color MutedText = new Color(0.8f, 0.82f, 0.85f);
 
-    public static Transform Canvas(string name, int order = 0)
+    // Canvas поверх экрана, масштабируется под любое разрешение (эталон 1920×1080)
+    public static Transform Canvas(string name)
     {
         var go = new GameObject(name, typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
-        var canvas = go.GetComponent<Canvas>();
-        canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-        canvas.sortingOrder = order;
+        go.GetComponent<Canvas>().renderMode = RenderMode.ScreenSpaceOverlay;
         var scaler = go.GetComponent<CanvasScaler>();
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
         scaler.referenceResolution = new Vector2(1920, 1080);
@@ -26,18 +27,22 @@ public static class UIKit
         return go.transform;
     }
 
-    // Без EventSystem кнопки не нажимаются; проект работает только на новой Input System
-    public static void EnsureEventSystem()
+    // Без EventSystem кнопки не нажимаются; проект работает только на новой Input System.
+    // Берём карту UI из ассета проекта: встроенные действия по умолчанию нельзя сохранить в сцену
+    public static GameObject CreateEventSystem()
     {
-        if (Object.FindAnyObjectByType<EventSystem>()) return;
         var go = new GameObject("EventSystem", typeof(EventSystem));
-        go.AddComponent<InputSystemUIInputModule>().AssignDefaultActions();
+        var module = go.AddComponent<InputSystemUIInputModule>();
+        var actions = AssetDatabase.LoadAssetAtPath<InputActionAsset>("Assets/InputSystem_Actions.inputactions");
+        if (actions) module.actionsAsset = actions;
+        return go;
     }
 
+    // Текст с чёрной обводкой; anchor — к какому месту экрана/родителя привязан, pos — смещение от него
     public static Text Text(Transform parent, string name, Vector2 anchor, Vector2 pos, int size, TextAnchor align)
     {
         var go = new GameObject(name, typeof(RectTransform));
-        go.transform.SetParent(parent, false);
+        if (parent) go.transform.SetParent(parent, false);
         var rt = (RectTransform)go.transform;
         rt.anchorMin = rt.anchorMax = rt.pivot = anchor;
         rt.anchoredPosition = pos;
@@ -56,6 +61,7 @@ public static class UIKit
         return t;
     }
 
+    // Цветной прямоугольник (Image); blocksClicks — ловит ли он клики мыши
     public static RectTransform Rect(string name, Transform parent, Color color, bool blocksClicks = false)
     {
         var go = new GameObject(name, typeof(RectTransform), typeof(Image));
@@ -66,6 +72,7 @@ public static class UIKit
         return (RectTransform)go.transform;
     }
 
+    // Растянуть элемент на всего родителя
     public static RectTransform Stretch(RectTransform rt)
     {
         rt.anchorMin = Vector2.zero;
@@ -74,7 +81,19 @@ public static class UIKit
         return rt;
     }
 
-    public static Button Button(Transform parent, string label, Vector2 pos, UnityAction onClick)
+    // Полоска-индикатор: тёмная подложка и заливка, ширину заливки меняет код (anchorMax.x)
+    public static RectTransform Bar(Transform parent, string name, Vector2 anchor, Vector2 pos, Vector2 size, Vector2 pivot)
+    {
+        var bg = Rect(name, parent, new Color(1, 1, 1, 0.15f));
+        bg.anchorMin = bg.anchorMax = anchor;
+        bg.pivot = pivot;
+        bg.anchoredPosition = pos;
+        bg.sizeDelta = size;
+        return Stretch(Rect("Fill", bg, Color.white));
+    }
+
+    // Обработчик нажатия назначается отдельно через UnityEventTools, чтобы он сохранился в сцене
+    public static Button Button(Transform parent, string label, Vector2 pos)
     {
         var rt = Rect(label, parent, Color.white, blocksClicks: true);
         rt.anchorMin = rt.anchorMax = rt.pivot = new Vector2(0.5f, 0.5f);
@@ -88,7 +107,6 @@ public static class UIKit
         colors.selectedColor = colors.highlightedColor;
         colors.pressedColor = new Color(0.12f, 0.13f, 0.15f, 1f);
         button.colors = colors;
-        button.onClick.AddListener(onClick);
 
         var text = Text(rt, "Label", new Vector2(0.5f, 0.5f), Vector2.zero, 36, TextAnchor.MiddleCenter);
         text.text = label;
@@ -97,7 +115,7 @@ public static class UIKit
     }
 
     // Горизонтальный ползунок 0..1: дорожка, заливка и ручка
-    public static Slider Slider(Transform parent, Vector2 pos, float value, UnityAction<float> onChange)
+    public static Slider Slider(Transform parent, Vector2 pos)
     {
         var root = new GameObject("Slider", typeof(RectTransform));
         root.transform.SetParent(parent, false);
@@ -130,17 +148,7 @@ public static class UIKit
         slider.direction = UnityEngine.UI.Slider.Direction.LeftToRight;
         slider.minValue = 0f;
         slider.maxValue = 1f;
-        slider.SetValueWithoutNotify(value);
-        slider.onValueChanged.AddListener(onChange);
+        slider.value = 1f;
         return slider;
-    }
-
-    public static void Quit()
-    {
-#if UNITY_EDITOR
-        UnityEditor.EditorApplication.isPlaying = false;
-#else
-        Application.Quit();
-#endif
     }
 }

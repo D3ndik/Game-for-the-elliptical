@@ -3,13 +3,14 @@ using System.IO;
 using UnityEditor;
 using UnityEngine;
 
-// Синтезирует звуки и музыку в WAV-файлы (Assets/Resources/Audio), чтобы не тянуть сторонние ассеты.
+// Синтезирует звуки и музыку в WAV-файлы (Assets/Audio), чтобы не тянуть сторонние ассеты.
 // Запуск: Tools → Generate Sounds. Любой файл можно заменить своим с тем же именем
 public static class SoundGenerator
 {
     const int Rate = 44100;
-    const string Dir = "Assets/Resources/Audio";
+    const string Dir = "Assets/Audio";
 
+    // Tools → Generate Sounds: синтезировать и сохранить все звуки и музыку
     [MenuItem("Tools/Generate Sounds")]
     public static void Generate()
     {
@@ -38,6 +39,7 @@ public static class SoundGenerator
     const float ChordLen = 4 * Beat;  // такт на аккорд
     const int Loops = 4;              // 4 круга по 4 аккорда = 32 с
 
+    // Музыка меню: пэд-аккорды, колокольчики четвертями и мягкий бас
     static float[] MenuMusic()
     {
         var buf = new float[(int)(Loops * 4 * ChordLen * Rate)];
@@ -60,6 +62,7 @@ public static class SoundGenerator
         return Normalize(buf, 0.7f);
     }
 
+    // Игровая музыка: те же аккорды тише, арпеджио восьмыми, бочка на каждую долю, хэт и бас
     static float[] GameMusic()
     {
         var buf = new float[(int)(Loops * 4 * ChordLen * Rate)];
@@ -101,6 +104,7 @@ public static class SoundGenerator
         }
     }
 
+    // Колокольчик: синус с быстрым затуханием и обертоном на октаву выше
     static void Bell(float[] buf, float start, float f, float amp)
     {
         int s0 = (int)(start * Rate), n = (int)(1.4f * Rate);
@@ -113,6 +117,7 @@ public static class SoundGenerator
         }
     }
 
+    // Щипок (бас): синус с третьей гармоникой и экспоненциальным затуханием decay
     static void Pluck(float[] buf, float start, float f, float amp, float decay)
     {
         int s0 = (int)(start * Rate), n = (int)(1.2f * Rate);
@@ -124,6 +129,7 @@ public static class SoundGenerator
         }
     }
 
+    // Бочка: синус, высота которого быстро падает со 120 до 45 Гц
     static void Kick(float[] buf, float start, float amp)
     {
         int s0 = (int)(start * Rate), n = (int)(0.3f * Rate);
@@ -136,6 +142,7 @@ public static class SoundGenerator
         }
     }
 
+    // Хэт: короткий щелчок высокочастотного шума
     static void Hat(float[] buf, float start, float amp, System.Random rnd)
     {
         int s0 = (int)(start * Rate), n = (int)(0.08f * Rate);
@@ -256,6 +263,7 @@ public static class SoundGenerator
 
     // ---------- Утилиты ----------
 
+    // Номер ноты MIDI → частота в герцах (69 = ля первой октавы, 440 Гц)
     static float Midi(int note) => 440f * Mathf.Pow(2f, (note - 69) / 12f);
 
     // По умолчанию хвосты нот заворачиваются в начало буфера — музыкальная петля склеивается без щелчка
@@ -265,6 +273,7 @@ public static class SoundGenerator
         else if (index < buf.Length) buf[index] += v;
     }
 
+    // Подогнать громкость так, чтобы самый громкий сэмпл был равен peak
     static float[] Normalize(float[] buf, float peak)
     {
         float max = 0;
@@ -273,6 +282,7 @@ public static class SoundGenerator
         return buf;
     }
 
+    // Записать 16-битный моно WAV в Assets/Audio и выставить импорт: музыка — сжатие Vorbis, эффекты — без сжатия
     static void Save(string name, float[] samples, bool music)
     {
         string path = $"{Dir}/{name}.wav";

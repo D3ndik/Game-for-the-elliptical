@@ -1,17 +1,19 @@
 using UnityEngine;
 
-// Пружинящая колонна-бампер: отталкивает всё, что в неё врезается, и слегка подсвечивается при ударе
+// Пружинящая колонна-бампер: отталкивает всё, что в неё врезается, и слегка подсвечивается при ударе.
+// Висит на каждой колонне (Bumpers/Bumper в сцене Arena); коллайдер с физ-материалом MaxBounce (упругость 1)
 public class Bumper : MonoBehaviour
 {
-    public float springImpulse = 10f;   // на единицу массы, чтобы лёгкие и тяжёлые отлетали одинаково
+    public float springImpulse = 10f;   // доп. толчок от пружины, на единицу массы — лёгкие и тяжёлые отлетают одинаково
     public float minOutSpeed = 12f;     // скорость, с которой гарантированно отлетаешь
-    public Color hitGlow = new Color(0.25f, 0.55f, 0.55f);
+    public Color hitGlow = new Color(0.25f, 0.55f, 0.55f); // цвет подсветки в момент удара
 
-    Material mat;
-    Color baseEmission;
-    Vector3 baseScale;
-    float pulse;
+    Material mat;          // своя копия материала, чтобы вспыхивала только эта колонна
+    Color baseEmission;    // обычное (спокойное) свечение
+    Vector3 baseScale;     // обычный размер — колонна «пружинит», чуть раздуваясь при ударе
+    float pulse;           // 1 в момент удара, плавно спадает до 0
 
+    // При загрузке: запоминаем размер и делаем копию материала для вспышки
     void Awake()
     {
         baseScale = transform.localScale;
@@ -22,6 +24,7 @@ public class Bumper : MonoBehaviour
         baseEmission = mat.GetColor("_EmissionColor");
     }
 
+    // Что-то врезалось в колонну: оттолкнуть от центра колонны, оглушить робота, звук, вспышка
     void OnCollisionEnter(Collision c)
     {
         var rb = c.rigidbody;
@@ -45,6 +48,7 @@ public class Bumper : MonoBehaviour
         pulse = 1f;
     }
 
+    // Каждый кадр после удара: колонна плавно возвращается к обычному размеру и свечению
     void Update()
     {
         if (pulse <= 0f) return;
